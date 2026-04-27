@@ -1,0 +1,162 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a volunteer or NGO admin in the system.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "photo_url": { "type": "string" },
+        "role": { "type": "string", "enum": ["volunteer", "ngo_admin"] },
+        "ngo_id": { "type": "string" },
+        "onboarded": { "type": "boolean" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "certifications": { "type": "array", "items": { "type": "string" } },
+        "impact_credits": { "type": "number" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "onboarded"]
+    },
+    "NGO": {
+      "title": "NGO",
+      "description": "Represents a registered Non-Governmental Organization.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "address": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "admin_uid": { "type": "string" },
+        "member_count": { "type": "number" },
+        "impact_credits": { "type": "number" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "admin_uid"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A specific relief task or need posted by an NGO.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string", "enum": ["Food", "Medical", "Shelter", "Rescue", "Other"] },
+        "urgency": { "type": "string", "enum": ["low", "medium", "critical"] },
+        "status": { "type": "string", "enum": ["open", "in_progress", "completed"] },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "location_name": { "type": "string" },
+        "ngo_id": { "type": "string" },
+        "claimed_by": { "type": "string" },
+        "volunteer_count_needed": { "type": "number" },
+        "volunteers_assigned": { "type": "array", "items": { "type": "string" } },
+        "created_at": { "type": "string", "format": "date-time" },
+        "source": { "type": "string", "enum": ["manual", "ocr_scan"] },
+        "ocr_raw_text": { "type": "string" }
+      },
+      "required": ["title", "category", "urgency", "status", "ngo_id"]
+    },
+    "Supply": {
+      "title": "Supply",
+      "description": "Inventory items available for trade between NGOs.",
+      "type": "object",
+      "properties": {
+        "item_name": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" },
+        "category": { "type": "string" },
+        "available": { "type": "boolean" },
+        "owner_ngo_id": { "type": "string" },
+        "owner_ngo_name": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "trade_status": { "type": "string", "enum": ["available", "requested", "traded"] },
+        "requester_ngo_id": { "type": "string" },
+        "requester_ngo_name": { "type": "string" },
+        "requested_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["item_name", "quantity", "owner_ngo_id", "trade_status"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Record of a supply trade and impact credit award.",
+      "type": "object",
+      "properties": {
+        "item_id": { "type": "string" },
+        "item_name": { "type": "string" },
+        "quantity": { "type": "number" },
+        "category": { "type": "string" },
+        "from_ngo": { "type": "string" },
+        "to_ngo": { "type": "string" },
+        "credits_earned": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["from_ngo", "to_ngo", "credits_earned"]
+    },
+    "JoinRequest": {
+      "title": "Join Request",
+      "description": "A volunteer's request to join an NGO.",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "user_name": { "type": "string" },
+        "ngo_id": { "type": "string" },
+        "ngo_name": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "ngo_id", "status"]
+    },
+    "OCRReport": {
+      "title": "OCR Report",
+      "description": "Results of a Gemini-powered field report scan.",
+      "type": "object",
+      "properties": {
+        "uploaded_by_uid": { "type": "string" },
+        "ngo_id": { "type": "string" },
+        "raw_image_base64": { "type": "string" },
+        "extracted_text": { "type": "string" },
+        "parsed_needs": { "type": "array" },
+        "tasks_created": { "type": "array", "items": { "type": "string" } },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uploaded_by_uid", "ngo_id"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and roles."
+    },
+    "/ngos/{ngoId}": {
+      "schema": "NGO",
+      "description": "NGO organization details."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Relief tasks and volunteer assignments."
+    },
+    "/supplies/{supplyId}": {
+      "schema": "Supply",
+      "description": "Shared micro-inventory of relief supplies."
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Log of supply trades and credit updates."
+    },
+    "join_requests/{requestId}": {
+      "schema": "JoinRequest",
+      "description": "Volunteer requests to join NGOs."
+    },
+    "/ocr_reports/{reportId}": {
+      "schema": "OCRReport",
+      "description": "Processed OCR scan records."
+    }
+  }
+}

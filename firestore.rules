@@ -1,0 +1,182 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // User Rules
+    function isValidUser(data) {
+      return data.uid == request.auth.uid 
+        && data.email is string 
+        && (data.role == 'volunteer' || data.role == 'ngo_admin')
+        && data.onboarded is bool;
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'photo_url', 'role', 'ngo_id', 'onboarded', 'skills', 'certifications']);
+    }
+
+    // NGO Rules
+    function isValidNGO(data) {
+      return data.name is string && data.name.size() <= 100;
+    }
+
+    match /ngos/{ngoId} {
+      allow read: if true; // Public read for selection
+      allow create: if true; // Allow seeding from client for demo
+      allow update: if isSignedIn() && (
+        // Admin update
+        (existing().get('admin_uid', 'system') == request.auth.uid || existing().get('admin_uid', 'system') == 'system')
+      );
+    }
+
+    // Task Rules
+    function isValidTask(data) {
+      return data.title is string && data.title.size() <= 200
+        && data.category in ['Food', 'Medical', 'Shelter', 'Rescue', 'Other']
+        && data.urgency in ['low', 'medium', 'critical']
+        && data.status in ['open', 'in_progress', 'completed']
+        && data.ngo_id is string;
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidTask(incoming());
+      allow update: if isSignedIn() && (
+        // NGO Admin/Member update
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id == existing().ngo_id) ||
+        // Volunteer claim/complete
+        (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'claimed_by', 'volunteers_assigned']))
+      ) && isValidTask(incoming());
+      allow delete: if isSignedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id == existing().ngo_id ||
+        existing().ngo_id != null
+      );
+    }
+
+    // Supply Rules
+    function isValidSupply(data) {
+      return data.item_name is string && data.item_name.size() <= 100
+        && data.quantity is number
+        && data.owner_ngo_id is string;
+    }
+
+    match /supplies/{supplyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidSupply(incoming());
+      allow update: if isSignedIn() && (
+        // Owner/Member update
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id == existing().owner_ngo_id) ||
+        // Remote trade update (Request/Accept/Decline)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['trade_status', 'requester_ngo_id', 'requester_ngo_name', 'requested_at', 'completed_at'])) ||
+        // Remote trade deletion (allow any NGO admin to complete trade)
+        (isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id != null))
+      ) && isValidSupply(incoming());
+      allow delete: if isSignedIn(); 
+    }
+
+    // Transaction Rules
+    function isValidTransaction(data) {
+      return data.item_id is string 
+        && data.item_name is string
+        && (data.from_ngo is string || data.from_ngo_id is string)
+        && (data.to_ngo is string || data.to_ngo_id is string);
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isSignedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id == existing().from_ngo ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id == existing().to_ngo
+      );
+      allow create: if isSignedIn() && isValidTransaction(incoming()) && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id == incoming().to_ngo
+      );
+    }
+
+    // OCR Report Rules
+    match /ocr_reports/{reportId} {
+      allow read, write: if isSignedIn() && (
+        existing().uploaded_by_uid == request.auth.uid ||
+        incoming().uploaded_by_uid == request.auth.uid
+      );
+    }
+
+    // JoinRequest Rules
+    function isValidJoinRequest(data) {
+      return data.user_id is string 
+        && data.ngo_id is string 
+        && data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    match /join_requests/{requestId} {
+      allow read: if isSignedIn() && (
+        existing().user_id == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id == existing().ngo_id
+      );
+      allow create: if isSignedIn() && isValidJoinRequest(incoming());
+      allow update: if isSignedIn() && (
+        // NGO admin can update status
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id == existing().ngo_id) && 
+        incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
+        isValidJoinRequest(incoming())
+      );
+      allow delete: if isSignedIn() && existing().user_id == request.auth.uid;
+    }
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (
+        existing().target_id == request.auth.uid || 
+        existing().target_id == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ngo_id ||
+        existing().target_id == 'all_volunteers'
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        // Allow users to mark their own notifications as read
+        incoming().diff(existing()).affectedKeys().hasOnly(['read'])
+      );
+      allow delete: if false; // No deletion needed for now
+    }
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && existing().author_id == request.auth.uid;
+      allow delete: if isSignedIn() && existing().author_id == request.auth.uid;
+    }
+
+    match /comments/{commentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && existing().author_id == request.auth.uid;
+      allow delete: if isSignedIn() && existing().author_id == request.auth.uid;
+    }
+  }
+}

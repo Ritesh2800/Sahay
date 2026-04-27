@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: var(--primary);
+  --color-primary-variant: var(--primary-variant);
+  --color-on-primary: var(--on-primary);
+  --color-secondary-theme: var(--secondary);
+  --color-success-theme: var(--success);
+  --color-error-theme: var(--error);
+  --color-surface: var(--surface);
+  --color-surface-lighter: var(--surface-lighter);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-background-dark: var(--background);
+  --color-border-theme: var(--border);
+  --color-aura-1: var(--aura-1);
+  --color-aura-2: var(--aura-2);
+}
+
+@layer base {
+  :root {
+    --background: #0a0a0a;
+    --surface: rgba(22, 22, 22, 0.7);
+    --surface-lighter: rgba(45, 45, 45, 0.5);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --primary: #3b82f6;
+    --primary-variant: #2563eb;
+    --on-primary: #ffffff;
+    --secondary: #fb923c;
+    --success: #22c55e;
+    --error: #ef4444;
+    --border: rgba(255, 255, 255, 0.08);
+    --aura-1: rgba(59, 130, 246, 0.12);
+    --aura-2: rgba(59, 130, 246, 0.04);
+    --grid-color: #1e293b;
+  }
+
+  [data-theme='light'] {
+    --background: #fdfdfd;
+    --surface: #ffffff;
+    --surface-lighter: #f8fafc;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --primary: #2563eb;
+    --primary-variant: #1e40af;
+    --on-primary: #ffffff;
+    --secondary: #ea580c;
+    --success: #16a34a;
+    --error: #dc2626;
+    --border: rgba(0, 0, 0, 0.07);
+    --aura-1: rgba(37, 99, 235, 0.05);
+    --aura-2: rgba(37, 99, 235, 0.01);
+    --grid-color: #f1f5f9;
+  }
+
+  body {
+    @apply bg-background-dark text-text-primary font-sans antialiased transition-colors duration-300;
+  }
+
+  /* Ensure text elements use theme variables instead of hardcoded white */
+  h1, h2, h3, h4, h5, h6, label {
+     @apply text-text-primary transition-colors duration-300;
+  }
+}
+
+.material-card {
+  @apply bg-surface border border-border-theme rounded-3xl transition-all duration-300;
+  box-shadow: 
+    0 4px 24px -6px rgb(0 0 0 / 0.1), 
+    0 0 0 1px var(--border),
+    0 0 0 2px var(--aura-2);
+}
+
+.aura-ring-subtle {
+  box-shadow: 
+    0 4px 24px -6px rgb(0 0 0 / 0.05),
+    0 0 0 1px var(--border),
+    0 0 0 1px var(--aura-2);
+}
+
+/* Specific aura effect for circular/pill elements */
+.aura-ring {
+  box-shadow: 
+    0 0 0 1px var(--border),
+    0 0 0 1.5px var(--aura-2);
+}
+
+.google-btn-primary {
+  @apply bg-primary text-on-primary rounded-2xl px-6 py-3.5 font-bold hover:bg-primary-variant transition-all shadow-xl shadow-primary/10 active:scale-95 flex items-center justify-center gap-2 outline-none focus:ring-2 ring-primary ring-offset-2 ring-offset-background-dark;
+}
+
+.google-btn-secondary {
+  @apply bg-surface-lighter text-text-primary border border-border-theme rounded-2xl px-6 py-3.5 font-bold hover:bg-surface transition-all active:scale-95 flex items-center justify-center gap-2;
+}
+
+.google-btn-outline {
+  @apply bg-transparent text-primary border-2 border-primary rounded-2xl px-6 py-3.5 font-bold hover:bg-primary/5 transition-all active:scale-95 flex items-center justify-center gap-2;
+}
+
+.glass-header {
+  @apply bg-surface/80 backdrop-blur-md border-b border-[var(--border)] transition-colors;
+}
+
+.glass-nav {
+  @apply bg-surface/80 backdrop-blur-xl border-t border-[var(--border)] shadow-2xl transition-colors;
+}
+
+/* Hide scrollbar but keep functionality */
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+* {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+/* Global scrollbar hiding */
+html, body {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar, 
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}

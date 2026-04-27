@@ -1,0 +1,9 @@
+{
+  "name": "Sahay",
+  "description": "A real-time NGO and volunteer coordination platform for disaster/crisis response with Gemini-powered OCR and offline sync.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

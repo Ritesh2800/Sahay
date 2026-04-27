@@ -1,0 +1,21 @@
+{
+  "name": "Sahay",
+  "short_name": "Sahay",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a73e8",
+  "description": "Coordinate. Respond. Save Lives. Real-time NGO and volunteer coordination for disaster response.",
+  "icons": [
+    {
+      "src": "https://www.gstatic.com/images/branding/product/2x/googleg_96dp.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "https://www.gstatic.com/images/branding/product/2x/googleg_512dp.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
