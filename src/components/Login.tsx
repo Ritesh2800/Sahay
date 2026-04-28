@@ -244,12 +244,7 @@ export default function Login() {
           </AnimatePresence>
         </div>
         
-        <div className="mt-12 flex flex-col items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_#4ade80]"></span>
-            <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-[0.3em] font-bold">
-                Secure Real-time Platform
-            </p>
-        </div>
+
       </motion.div>
     </div>
   );

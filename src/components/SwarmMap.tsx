@@ -3,8 +3,9 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { db } from "../lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
-import { AlertCircle, Navigation } from "lucide-react";
+import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { AlertCircle, Navigation, Trash2 } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 // Safe remote URLs for default leaflet marker
 const defaultIcon = L.icon({
@@ -36,6 +37,18 @@ const NGO_COLORS: any = {
 export default function SwarmMap() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const { userData } = useAuth();
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (window.confirm("Are you sure you want to remove this task from the map?")) {
+      try {
+        await deleteDoc(doc(db, "tasks", taskId));
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        alert("Failed to delete task. Please try again.");
+      }
+    }
+  };
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -72,8 +85,22 @@ export default function SwarmMap() {
             icon={task.urgency === 'critical' ? criticalIcon : defaultIcon}
           >
             <Popup>
-              <div className="p-1">
-                <h4 className="font-bold text-sm mb-1">{task.title}</h4>
+              <div className="p-1 min-w-[180px]">
+                <div className="flex justify-between items-start gap-2 mb-1">
+                  <h4 className="font-bold text-sm leading-tight flex-1">{task.title}</h4>
+                  {userData?.ngo_id && userData.ngo_id === task.ngo_id && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTask(task.id);
+                      }} 
+                      className="text-red-500 hover:bg-red-50 p-1 rounded-md transition-colors"
+                      title="Remove Task"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mb-2">
                   <span 
                     className="text-[10px] text-white px-2 py-0.5 rounded-full font-bold uppercase"

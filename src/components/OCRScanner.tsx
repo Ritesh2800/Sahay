@@ -84,13 +84,14 @@ export default function OCRScanner({ onComplete }: { onComplete?: () => void }) 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       
-      const prompt = `Analyze this disaster relief report image. Extract all individual requests or needs. 
+      const prompt = `Analyze this disaster relief report image. It might be handwritten or typed. If it is handwritten, read it carefully and DO NOT return an error - process it just like typed text. 
+      Extract all individual requests or needs. 
       For each item, specify:
       1. title (a concise, descriptive headline for the request)
       2. need_type (one of: Food, Medical, Shelter, Rescue, Other)
       3. description (brief details)
       4. urgency (low, medium, critical)
-      5. location (as mentioned)
+      5. location (Extract the specific location. CRITICAL: Expand this to a FULL address by looking at the rest of the document for context. E.g., if the item says 'Yewalewadi' and the document mentions 'Pune, Maharashtra', the location MUST be 'Yewalewadi, Pune, Maharashtra, India'. If 'Manipur' is the context, include 'Manipur, India'. This will be directly used for map geocoding.)
       6. person_name (if mentioned)
       
       Also provide a high-level summary of the entire document.`;
@@ -135,9 +136,9 @@ export default function OCRScanner({ onComplete }: { onComplete?: () => void }) 
 
       const parsedResult = JSON.parse(response.text);
       setResult(parsedResult);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gemini OCR Error:", error);
-      alert("Failed to analyze image with Gemini AI.");
+      alert(`Failed to analyze image with Gemini AI: ${error?.message || error}`);
     } finally {
       setLoading(false);
     }
@@ -175,11 +176,19 @@ export default function OCRScanner({ onComplete }: { onComplete?: () => void }) 
 
         if (item.location && item.location.trim() !== "" && item.location !== "Unknown Location") {
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(item.location)}`);
+                const searchQuery = encodeURIComponent(item.location);
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'SahayApp/1.0 (Relief Coordination Platform)'
+                    }
+                });
                 const data = await res.json();
                 if (data && data.length > 0) {
                     taskLat = parseFloat(data[0].lat);
                     taskLng = parseFloat(data[0].lon);
+                } else {
+                    console.warn(`Could not geocode location: ${item.location}`);
                 }
             } catch (err) {
                 console.error("Geocoding failed:", err);
