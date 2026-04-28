@@ -199,7 +199,7 @@ export default function OCRScanner({ onComplete }: { onComplete?: () => void }) 
           title: itemTitle,
           description: item.description,
           category: item.need_type,
-          urgency: item.urgency || "medium",
+          urgency: "critical", // Always set to critical so it appears as a red marker on map
           status: "open",
           lat: taskLat, 
           lng: taskLng,

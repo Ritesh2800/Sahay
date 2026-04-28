@@ -26,6 +26,18 @@ const criticalIcon = L.divIcon({
   popupAnchor: [0, -16]
 });
 
+const userIcon = L.divIcon({
+  html: `<div class="relative flex items-center justify-center w-12 h-12">
+    <div class="absolute w-full h-full bg-blue-500 rounded-full animate-ping opacity-40"></div>
+    <div class="absolute w-6 h-6 bg-blue-500 rounded-full opacity-60"></div>
+    <div class="relative w-4 h-4 bg-white rounded-full border-[3px] border-blue-600 shadow-lg"></div>
+  </div>`,
+  className: '',
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -24]
+});
+
 const NGO_COLORS: any = {
   Food: "#1e8e3e",
   Medical: "#d93025",
@@ -73,16 +85,16 @@ export default function SwarmMap() {
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         
         {userLocation && (
-          <Marker position={userLocation} icon={defaultIcon}>
+          <Marker position={userLocation} icon={userIcon}>
             <Popup>You are here</Popup>
           </Marker>
         )}
 
-        {tasks.map((task) => (
+        {tasks.filter(task => task.urgency === 'critical').map((task) => (
           <Marker 
             key={task.id} 
             position={[task.lat || 0, task.lng || 0]}
-            icon={task.urgency === 'critical' ? criticalIcon : defaultIcon}
+            icon={criticalIcon}
           >
             <Popup>
               <div className="p-1 min-w-[180px]">
